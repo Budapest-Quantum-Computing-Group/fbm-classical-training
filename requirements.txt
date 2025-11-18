@@ -1,0 +1,15 @@
+jax==0.4.37
+jaxlib==0.4.36
+optax==0.2.4
+numba==0.60.0
+numpy==2.0.2
+scipy==1.15.1
+matplotlib
+pytest==8.3.4
+networkx==3.4.2
+piquasso @ git+https://github.com/Budapest-Quantum-Computing-Group/piquasso@kz-script
+PennyLane==0.40.0
+pandas==2.3.3
+pgmpy==1.0.0
+qml_benchmarks @ git+https://github.com/XanaduAI/qml-benchmarks@main
+
