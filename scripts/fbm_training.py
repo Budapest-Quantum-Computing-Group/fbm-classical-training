@@ -22,6 +22,8 @@ CONFIG = dict(
     no_of_Z_samples=1000,  # Number of Z-string samples for MMD estimation
     SEED=None,  # Random seed for reproducibility
     length_cutoff=2,  # Cutoff for Z-string-lengths
+    # Physical indices in range(4 * N). None preserves the standard encoding.
+    discarded_qubits=None,
 )
 
 PATH = "./data/molecular/"
@@ -42,6 +44,7 @@ if __name__ == "__main__":
     n_layers = CONFIG["n_layers"]
     no_of_Z_samples = CONFIG["no_of_Z_samples"]
     length_cutoff = CONFIG["length_cutoff"]
+    discarded_qubits = CONFIG["discarded_qubits"]
 
     n_bits = 4 * N
 
@@ -71,6 +74,7 @@ if __name__ == "__main__":
         N=N,
         training_set=training_set,
         length_cutoff=length_cutoff,
+        discarded_qubits=discarded_qubits,
     )
 
     losses = []
@@ -103,11 +107,14 @@ if __name__ == "__main__":
         test_set,
         N,
         no_of_Z_samples,
+        discarded_qubits=discarded_qubits,
     )
 
     np.savetxt(PATH + "fermion_mmds.txt", [test_mmd_mean, test_mmd_std])
 
-    covariance_matrix = get_covariance_matrix(N, weights)
+    covariance_matrix = get_covariance_matrix(
+        N, weights, discarded_qubits=discarded_qubits
+    )
 
     np.savetxt(PATH + "fermion_covariance.txt", covariance_matrix)
 

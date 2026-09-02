@@ -4,7 +4,7 @@ from src.indices import iterate_first_quantized_on_fock_subspace
 
 from itertools import product
 
-from piquasso.fermionic._utils import get_fock_subspace_dimension
+from src.piquasso_utils import get_fock_subspace_dimension
 
 
 def ordered_partitions(n):

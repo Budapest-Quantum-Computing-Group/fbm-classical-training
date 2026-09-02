@@ -7,9 +7,10 @@ scipy==1.15.1
 matplotlib
 pytest==8.3.4
 networkx==3.4.2
-piquasso @ git+https://github.com/Budapest-Quantum-Computing-Group/piquasso@kz-script
+piquasso
+autoray>=0.6.11,<0.8
 PennyLane==0.40.0
 pandas==2.3.3
 pgmpy==1.0.0
 qml_benchmarks @ git+https://github.com/XanaduAI/qml-benchmarks@main
-
+tqdm

@@ -14,10 +14,12 @@ from src.utils import (
     normalize_prob_dist,
     get_weight_vector,
     get_localities_frequencies,
+    get_num_visible_qubits,
+    get_visible_qubits,
 )
 from src.indices import (
-    pad_majorana_string,
     expand_to_Z,
+    map_visible_to_physical,
     random_first_quantized_majorana_string,
 )
 
@@ -37,6 +39,7 @@ def get_loss_and_grad_estimator_exact(
     N,
     training_set,
     length_cutoff,
+    discarded_qubits=None,
 ):
     """
     Args:
@@ -44,23 +47,30 @@ def get_loss_and_grad_estimator_exact(
         N: Number of subsystems.
         training_set: For calculating target_Z_strings on-demand.
         length_cutoff: Maximum locality for Z strings.
+        discarded_qubits: Physical qubit indices to exclude. By default, the
+            first qubit of every four-qubit subsystem is excluded.
     """
     n_bits = 4 * N
+    n_visible_qubits = get_num_visible_qubits(N, discarded_qubits)
 
     target_Z_strings: list = get_target_Z_strings_from_samples(
-        training_set, N * (3), length_cutoff
+        training_set, n_visible_qubits, length_cutoff
     )
     target_Z_strings = jnp.concatenate(target_Z_strings)
 
     Z_strings = [
-        calculate_relevant_Z_strings_on_subspace(n_bits, length, N)
+        calculate_relevant_Z_strings_on_subspace(
+            n_bits, length, N, discarded_qubits
+        )
         for length in range(length_cutoff + 1)
     ]
 
     loc_probs = normalize_prob_dist(
-        get_weight(np.arange(length_cutoff + 1), sigma=sigma, n_bits=(3 * N))[1:]
+        get_weight(
+            np.arange(length_cutoff + 1), sigma=sigma, n_bits=n_visible_qubits
+        )[1:]
     )
-    loc_weights = get_weight_vector(3 * N, loc_probs)
+    loc_weights = get_weight_vector(n_visible_qubits, loc_probs)
 
     def _estimate_loss_and_grad(weights):
         partial_calculate_loss = partial(
@@ -95,6 +105,7 @@ def get_loss_and_grad_estimator(
     training_set,  # For calculating target_Z_strings on-demand.
     length_cutoff,
     mode: Literal["fbm", "free_fbm"] = "fbm",
+    discarded_qubits=None,
 ):
     """Returns a function that estimates the loss and its gradient.
 
@@ -105,6 +116,9 @@ def get_loss_and_grad_estimator(
         training_set (array-like): Training data for calculating target Z strings on-demand.
         length_cutoff (int): Maximum locality for Z strings.
         mode (Literal["fbm", "free_fbm"], optional): Mode of operation. Defaults to "fbm".
+        discarded_qubits (collection[int], optional): Physical qubit indices to
+            exclude from the loss. Defaults to the first qubit of every
+            four-qubit subsystem.
     """
 
     if mode == "fbm":
@@ -114,13 +128,18 @@ def get_loss_and_grad_estimator(
     else:
         raise NotImplemented(f"Mode {mode} not implemented.")
 
-    n_bits = 4 * N
+    visible_qubits = get_visible_qubits(N, discarded_qubits)
+    n_visible_qubits = len(visible_qubits)
     locality_all_sigma = []
     locality_frequencies_all_sigma = []
     for sigma in sigmas:
         localities_for_sigma, locality_frequencies_for_sigma = (
             get_localities_frequencies(
-                sigma=sigma, N=N, length_cutoff=length_cutoff, no_of_Z_samples=no_of_Z_samples
+                sigma=sigma,
+                N=N,
+                length_cutoff=length_cutoff,
+                no_of_Z_samples=no_of_Z_samples,
+                discarded_qubits=discarded_qubits,
             )
         )
         locality_all_sigma.append(localities_for_sigma)
@@ -138,11 +157,12 @@ def get_loss_and_grad_estimator(
             target_Z_expvals_local = np.empty(freq, dtype=weights.dtype)
             for i in range(freq):
                 sampled_majorana_string = random_first_quantized_majorana_string(
-                    n_bits - N, locality
+                    n_visible_qubits, locality
                 )
-                sampled_Z_string = expand_to_Z(
-                    pad_majorana_string(sampled_majorana_string, 4 - 1)
+                physical_string = map_visible_to_physical(
+                    sampled_majorana_string, visible_qubits
                 )
+                sampled_Z_string = expand_to_Z(physical_string)
                 sampled_Z_strings_local[i] = sampled_Z_string
                 target_Z_expvals_local[i] = get_target_Z_string(
                     training_set, sampled_majorana_string

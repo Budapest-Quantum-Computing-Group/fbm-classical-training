@@ -1,6 +1,6 @@
 import numpy as np
 
-from piquasso.fermionic._utils import next_first_quantized
+from src.piquasso_utils import next_first_quantized
 
 from src.utils import get_vector_lengths
 

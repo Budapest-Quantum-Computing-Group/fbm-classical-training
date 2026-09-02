@@ -19,6 +19,9 @@ To train the FBM model using all Z-string expectation values up to a fixed local
 ```bash
 python scripts/exact_fbm_training.py
 ```
+The exact probability diagnostic and `genomic_fbm_training.py` use Piquasso's
+fermionic `PureFockSimulator`.
+
 ## Training FBMs
 To train the FBM model using a fixed number of randomly sampled Z-strings in each step and finally test the model on the test set, run:
 ```bash
@@ -42,3 +45,8 @@ python benchmarks/train_rbm.py
 ```
 ## Changing hyperparameters
 To change hyperparameters and problem path, modify the `PATH` and `CONFIG` variables in the corresponding python files.
+
+The FBM scripts also accept a `discarded_qubits` configuration entry containing
+physical indices from `0` through `4 * N - 1`. Dataset columns are mapped, in
+order, to the physical qubits not listed there. Leaving the value as `None`
+preserves the original encoding, which discards physical qubits `0, 4, 8, ...`.

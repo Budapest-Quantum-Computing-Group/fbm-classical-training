@@ -5,12 +5,12 @@ import numba as nb
 import jax
 import jax.numpy as jnp
 
-from functools import partial, cache
+from functools import partial
 
-from piquasso.fermionic._utils import (
+from src.piquasso_utils import (
     next_first_quantized,
     get_fock_subspace_dimension,
-    _to_first_quantized,
+    to_first_quantized,
 )
 
 
@@ -23,7 +23,7 @@ def _random_bitstring(n, k):
 
 
 def random_first_quantized_majorana_string(d, locality):
-    return _to_first_quantized(_random_bitstring(d, locality))
+    return to_first_quantized(_random_bitstring(d, locality))
 
 
 @nb.njit(cache=True)
@@ -56,11 +56,20 @@ def pad_majorana_string(string, n_bits_local_m_1):
     return string + string // n_bits_local_m_1 + 1
 
 
-@cache
-def calculate_relevant_Z_strings_on_subspace(n_bits, Z_locality, N):
-    small_d_over_2 = n_bits - N
+def map_visible_to_physical(string, visible_qubits):
+    """Map indices in the retained data space to physical circuit qubits."""
+    return np.asarray(visible_qubits, dtype=int)[np.asarray(string, dtype=int)]
 
-    n_bits_local_m_1 = n_bits // N - 1
+
+def calculate_relevant_Z_strings_on_subspace(
+    n_bits, Z_locality, N, discarded_qubits=None
+):
+    from src.utils import get_visible_qubits
+
+    if n_bits != 4 * N:
+        raise ValueError(f"Expected n_bits=4*N={4 * N}, got {n_bits}.")
+    visible_qubits = get_visible_qubits(N, discarded_qubits)
+    small_d_over_2 = len(visible_qubits)
 
     size = get_fock_subspace_dimension(small_d_over_2, Z_locality)
 
@@ -69,8 +78,8 @@ def calculate_relevant_Z_strings_on_subspace(n_bits, Z_locality, N):
     for idx, string in enumerate(
         iterate_first_quantized_on_fock_subspace(small_d_over_2, Z_locality)
     ):
-        padded_string = pad_majorana_string(string, n_bits_local_m_1)
-        Z_strings[idx] = expand_to_Z(padded_string)
+        physical_string = map_visible_to_physical(string, visible_qubits)
+        Z_strings[idx] = expand_to_Z(physical_string)
 
     return Z_strings
 

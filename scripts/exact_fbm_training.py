@@ -16,6 +16,8 @@ CONFIG = dict(
     learning_rate=0.01,  # Learning rate for the optimizer
     ITER=1,  # Number of training iterations
     SEED=None,  # Random seed for reproducibility
+    # Physical indices in range(4 * N). None preserves the standard encoding.
+    discarded_qubits=None,
 )
 
 
@@ -27,6 +29,7 @@ if __name__ == "__main__":
     length_cutoff = CONFIG["length_cutoff"]
     learning_rate = CONFIG["learning_rate"]
     ITER = CONFIG["ITER"]
+    discarded_qubits = CONFIG["discarded_qubits"]
 
     n_bits = 4 * N
     d = 2 * n_bits
@@ -50,6 +53,7 @@ if __name__ == "__main__":
         N=N,
         training_set=training_set,
         length_cutoff=length_cutoff,
+        discarded_qubits=discarded_qubits,
     )
 
     losses = []
@@ -59,7 +63,9 @@ if __name__ == "__main__":
         loss, loss_grad = estimate_loss_and_grad(weights)
         losses.append(loss)
 
-        pred_dist = get_exact_prob_dist(N, weights[:N], weights[N:])
+        pred_dist = get_exact_prob_dist(
+            N, weights[:N], weights[N:], discarded_qubits=discarded_qubits
+        )
         TVs.append(np.sum(np.abs(pred_dist - target_dist)) / 2)
 
         updates, opt_state = optimizer.update(loss_grad, opt_state)
