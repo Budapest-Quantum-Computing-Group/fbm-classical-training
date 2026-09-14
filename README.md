@@ -40,5 +40,13 @@ To tune, and train the Restricted Boltzmann Machine, run
 ```bash
 python benchmarks/train_rbm.py
 ```
+To train a Denoising Diffusion Probabilistic Model (DDPM), run
+```bash
+python benchmarks/train_diff.py
+```
+To train a Transformer, run
+```bash
+python benchmarks/train_transformer.py
+```
 ## Changing hyperparameters
 To change hyperparameters and problem path, modify the `PATH` and `CONFIG` variables in the corresponding python files.
